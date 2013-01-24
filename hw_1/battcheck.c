@@ -1,3 +1,24 @@
+/*
+*  battcheck.c - ACPI Battery Kernel Module
+* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or (at
+*  your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful, but
+*  WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*  General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License along
+*  with this program; if not, write to the Free Software Foundation, Inc.,
+*  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+*
+* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <acpi/acpi.h>
@@ -32,23 +53,24 @@ typedef struct
     int last_full_charge_cap;
     int design_cap_warn;
     int design_cap_low;
-}BIF_PACKAGES;
+}BIF_PACKAGE;
 
 typedef struct 
 {
     int battery_state; 
     int batt_remn_cap; 
     int rem_batt_perc;
-}BST_PACKAGES;
+}BST_PACKAGE;
 
-BIF_PACKAGES bif_packages;
-BST_PACKAGES bst_packages;
+BIF_PACKAGE bif_package;
+BST_PACKAGE bst_package;
 
 int method_count = 0;
 int count = 0;
+
 static int battcheck_kthread(void *data) 
 {
-    while (1)
+    while (!kthread_should_stop())
     {
         int sleep_time = SHRT_SLEEP_TIME;
 
@@ -59,19 +81,20 @@ static int battcheck_kthread(void *data)
         {
             acpi_packages("\\_SB_.BAT0._BIF");
             acpi_packages("\\_SB_.BAT0._BST");
+
             method_count = 1;
         }
 
-        if (bst_packages.battery_state == BATT_FULL)
+        if (bst_package.battery_state == BATT_FULL)
             printk(KERN_INFO "[battcheck]: battery is fully charged\n");
 
-        else if (bst_packages.battery_state == BATT_DISCHARGE)
+        else if (bst_package.battery_state == BATT_DISCHARGE)
             printk(KERN_INFO "[battcheck]: battery is discharging\n");
 
-        else if (bst_packages.battery_state == BATT_CHARGING)
+        else if (bst_package.battery_state == BATT_CHARGING)
             printk(KERN_INFO "[battcheck]: battery is charging\n");
         
-        if (bst_packages.batt_remn_cap == bif_packages.design_cap_warn)
+        if (bst_package.batt_remn_cap == bif_package.design_cap_warn)
         {
             if (count == 0)
                 printk(KERN_ALERT "[battcheck]: battery is low\n");
@@ -79,21 +102,20 @@ static int battcheck_kthread(void *data)
             count = 1;
         }
             
-        else if (bst_packages.batt_remn_cap == bif_packages.design_cap_low)
+        else if (bst_package.batt_remn_cap == bif_package.design_cap_low)
         {
             printk(KERN_ALERT "[battcheck]: battery is critically low\n");
             sleep_time = LONG_SLEEP_TIME;
         }
 
         printk(KERN_INFO "[battcheck]: battery percent remaining: %d.%02d%%\n", 
-                          (bst_packages.rem_batt_perc / 100), bst_packages.rem_batt_perc % 100);
-        //printk(KERN_INFO "[battcheck]: battery remaining cap: %d\n", bst_packages.batt_remn_cap);
-        //printk(KERN_INFO "[battcheck]: last full charge: %d\n", bif_packages.last_full_charge_cap);
-        //printk(KERN_INFO "[battcheck]: design cap warn: %d\n", bif_packages.design_cap_warn);
-        //printk(KERN_INFO "[battcheck]: design cap critical: %d\n", bif_packages.design_cap_low);
+                          (bst_package.rem_batt_perc / 100), bst_package.rem_batt_perc % 100);
+        //printk(KERN_INFO "[battcheck]: battery remaining cap: %d\n", bst_package.batt_remn_cap);
+        //printk(KERN_INFO "[battcheck]: last full charge: %d\n", bif_package.last_full_charge_cap);
+        //printk(KERN_INFO "[battcheck]: design cap warn: %d\n", bif_package.design_cap_warn);
+        //printk(KERN_INFO "[battcheck]: design cap critical: %d\n", bif_package.design_cap_low);
 
         msleep_interruptible(sleep_time);
-        if (kthread_should_stop()) break;
     }
 
     return 0;
@@ -136,23 +158,23 @@ static void acpi_packages(const char *method)
     if (method == "\\_SB_.BAT0._BIF") 
     {
         element = &result->package.elements[2];
-        bif_packages.last_full_charge_cap = (int)element->integer.value;
+        bif_package.last_full_charge_cap = (int)element->integer.value;
 
         element = &result->package.elements[5];
-        bif_packages.design_cap_warn = (int)element->integer.value;
+        bif_package.design_cap_warn = (int)element->integer.value;
 
         element = &result->package.elements[6];
-        bif_packages.design_cap_low = (int)element->integer.value;
+        bif_package.design_cap_low = (int)element->integer.value;
     }
     if (method == "\\_SB_.BAT0._BST")
     {
         element = &result->package.elements[0];
-        bst_packages.battery_state = (int)element->integer.value;
+        bst_package.battery_state = (int)element->integer.value;
 
         element = &result->package.elements[2];
-        bst_packages.batt_remn_cap = (int)element->integer.value;
+        bst_package.batt_remn_cap = (int)element->integer.value;
 
-        bst_packages.rem_batt_perc = (bst_packages.batt_remn_cap * 10000 / bif_packages.last_full_charge_cap);
+        bst_package.rem_batt_perc = (bst_package.batt_remn_cap * 10000 / bif_package.last_full_charge_cap);
     }
 
     kfree(buffer.pointer);
