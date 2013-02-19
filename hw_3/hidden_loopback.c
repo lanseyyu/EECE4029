@@ -35,9 +35,6 @@
 #include <linux/in6.h>
 #include <asm/checksum.h>
 
-#define OS_RX_INT 0x0001
-#define OS_TX_INT 0x0002
-
 #define KERNEL_AUTH     "Samir Silbak"
 #define KERNEL_DESC     "kernel network 'driver' implementing loopback  <silbak04@gmail.com>"
 
@@ -112,13 +109,13 @@ int os_start_xmit(struct sk_buff *skb, struct net_device *dev)
     dev->trans_start = jiffies;
     priv_dev->skb = skb;
 
-    /* get ready for hardware tranmist */
+    /* get ready for hardware transmit */
     ih = (struct iphdr *)(buff + sizeof(struct ethhdr));
     s_addr = &ih->saddr;
     d_addr = &ih->daddr;
 
     /* toggle third octet bit for 
-       both source and destinatin address */
+       both source and destination address */
     ((u8 *)s_addr)[2] ^= 1;
     ((u8 *)d_addr)[2] ^= 1;
 
@@ -267,14 +264,14 @@ void exit_mod(void)
         priv = netdev_priv(os0);
         kfree(priv->packet);
         unregister_netdev(os0);
-        printk("unregisterd %s device\n", os0->name);
+        printk("unregistered %s device\n", os0->name);
     }
     if(os1)
     {
         priv = netdev_priv(os1);
         kfree(priv->packet);
         unregister_netdev(os1);
-        printk("unregisterd %s device\n", os1->name);
+        printk("unregistered %s device\n", os1->name);
     }
 }
 
