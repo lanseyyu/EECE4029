@@ -99,9 +99,8 @@ int os_start_xmit(struct sk_buff *skb, struct net_device *dev)
     buff = skb->data;
     len  = skb->len;
 
-    // have we received a packet less
-    // than the desired length? if so,
-    // pad it with 0's
+    /* have we received a packet less than 
+       the desired length? if so, pad it with 0's */
     if (len < ETH_ZLEN)
     {
         memset(short_pkt, 0, ETH_ZLEN);
@@ -113,14 +112,13 @@ int os_start_xmit(struct sk_buff *skb, struct net_device *dev)
     dev->trans_start = jiffies;
     priv_dev->skb = skb;
 
-    // get ready for hardware transmit
+    /* get ready for hardware tranmist */
     ih = (struct iphdr *)(buff + sizeof(struct ethhdr));
     s_addr = &ih->saddr;
     d_addr = &ih->daddr;
 
-    // toggle third octet bit
-    // for both source and 
-    // destinatin address
+    /* toggle third octet bit for 
+       both source and destinatin address */
     ((u8 *)s_addr)[2] ^= 1;
     ((u8 *)d_addr)[2] ^= 1;
 
