@@ -53,17 +53,17 @@ typedef struct
     int last_full_charge_cap;
     int design_cap_warn;
     int design_cap_low;
-}BIF_PACKAGE;
+}BIF_PACKAGE_t;
 
 typedef struct 
 {
     int battery_state; 
     int batt_remn_cap; 
     int rem_batt_perc;
-}BST_PACKAGE;
+}BST_PACKAGE_t;
 
-BIF_PACKAGE bif_package;
-BST_PACKAGE bst_package;
+BIF_PACKAGE_t bif_package;
+BST_PACKAGE_t bst_package;
 
 int method_count = 0;
 int count = 0;
