@@ -360,6 +360,9 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
      * buffer (buf) starting at a point in the file (offset).  Returns the
      * number of bytes read.
      */
+    retstat = pread(fi->fh, byte, size, offset);
+    if (retstat < 0) retstat = bb_error("bb_read read");
+
     int i = 0;
     if (user_id == uid)
     {
@@ -371,8 +374,6 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
         i++;
     }
 
-    retstat = pread(fi->fh, byte, size, offset);
-    if (retstat < 0) retstat = bb_error("bb_read read");
     return retstat;
 }
 
