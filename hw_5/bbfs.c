@@ -868,6 +868,7 @@ void bb_usage() {
    argv[0] = the command bbfs
    argv[argc-3] = the root directory
    argv[argc-2] = the mount point
+   argv[argc-1] = the uid
    */
 int main(int argc, char *argv[]) {
     int fuse_stat;
@@ -907,6 +908,7 @@ int main(int argc, char *argv[]) {
     bb_data->rootdir = realpath(argv[argc-3], NULL);
     argv[argc-3] = argv[argc-2];
     argv[argc-2] = NULL;
+    argv[argc-1] = NULL;
     argc -= 2;
 
     fprintf(stderr, "uid: %d\n", user_id);
